@@ -1,8 +1,12 @@
 // This is supposed to script to define a Place class/prototype
 
 let https = require('https');
-
+// import https from 'https';
 const token = process.env.GMAPS_API;
+
+let universities = require('../../test_scripts/universities.json').map(school => {
+	return school.name;
+});
 
 class Place {
 	constructor({name = null, street = null, placeID = null, lat = null, long = null} = {}) {
@@ -54,10 +58,12 @@ class Place {
 			});
 			response.on("end", () => {
 				body = JSON.parse(body);
-				this.setStreet(body.results[0].formatted_address);
-				this.setPlaceID(body.results[0].place_id);
-				this.setLat(body.results[0].geometry.location.lat);
-				this.setLong(body.results[0].geometry.location.lng);
+				if (body.results.length) {
+					this.setStreet(body.results[0].formatted_address);
+					this.setPlaceID(body.results[0].place_id);
+					this.setLat(body.results[0].geometry.location.lat);
+					this.setLong(body.results[0].geometry.location.lng);
+				}
 				// console.log(this);
 			});
 		}).on("error", (e) => {
@@ -76,15 +82,16 @@ class Place {
 	}
 }
 
-let mit = new Place({
-	name: 'Massachusetts Institute of Technology',
-	street: '77 Massachusetts Avenue, Cambridge, MA 02139',
-	lat: 42.36,
-	long: -71.092
-});
+// The issue (maybe good thing actually) with https or http is that requests are asynchronous.
+// This means that after calling Place.populateAttributes(), you have to time out a little bit
+// to wait for the method to finish running in order to see the changes made.
 
-mit.populateAttributes();
+let updatedUniversities = universities.map(name => {
+	let place = new Place({name: name});
+	place.populateAttributes();
+	return place;
+});
+// mit.populateAttributes();
 setTimeout(function() {
-	console.log(mit);
-}, 1000);
-console.log(mit);
+	console.log(updatedUniversities);
+}, 2000);
